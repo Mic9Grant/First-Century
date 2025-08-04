@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 1st Century Timeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #f4f4f4;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid #c9a96e;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            color: #c9a96e;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .timeline-container {
+            position: relative;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, #c9a96e, #8b7355);
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin: 3rem 0;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.6s ease;
+        }
+
+        .timeline-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .timeline-item:nth-child(odd) .content {
+            margin-right: 50%;
+            padding-right: 3rem;
+            text-align: right;
+        }
+
+        .timeline-item:nth-child(even) .content {
+            margin-left: 50%;
+            padding-left: 3rem;
+            text-align: left;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: #c9a96e;
+            border-radius: 50%;
+            border: 4px solid #1a1a2e;
+            box-shadow: 0 0 15px rgba(201, 169, 110, 0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .timeline-dot:hover {
+            transform: translateX(-50%) scale(1.3);
+            box-shadow: 0 0 25px rgba(201, 169, 110, 1);
+        }
+
+        .content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(201, 169, 110, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .content:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #c9a96e;
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .year {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #c9a96e;
+            margin-bottom: 0.5rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .event-title {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .event-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 5% auto;
+            padding: 2rem;
+            border: 2px solid #c9a96e;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #c9a96e;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        .modal h2 {
+            color: #c9a96e;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .modal h3 {
+            color: #fff;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .modal p {
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .timeline-line {
+                left: 2rem;
+            }
+            
+            .timeline-dot {
+                left: 2rem;
+            }
+            
+            .timeline-item:nth-child(odd) .content,
+            .timeline-item:nth-child(even) .content {
+                margin-left: 4rem;
+                margin-right: 0;
+                padding-left: 2rem;
+                padding-right: 1rem;
+                text-align: left;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .scroll-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #c9a96e;
+            font-size: 2rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>The First Century CE</h1>
+        <p>A Transformative Era in Human History</p>
+    </div>
+
+    <div class="timeline-container">
+        <div class="timeline-line"></div>
+        
+        <div class="timeline-item" data-event="jesus">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">c. 4 BCE - 30/33 CE</div>
+                <div class="event-title">Life and Crucifixion of Jesus Christ</div>
+                <div class="event-description">
+                    The birth, ministry, and crucifixion of Jesus of Nazareth established the foundation of Christianity.
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-item" data-event="augustus">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">27 BCE - 14 CE</div>
+                <div class="event-title">Establishment of the Roman Empire</div>
+                <div class="event-description">
+                    Augustus became the first Roman emperor, ending the Republic and initiating the Pax Romana.
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-item" data-event="paul">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">c. 33-67 CE</div>
+                <div class="event-title">Ministry of Paul the Apostle</div>
+                <div class="event-description">
+                    Paul's missionary journeys spread Christianity throughout the Roman Empire.
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-item" data-event="britain">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">43 CE</div>
+                <div class="event-title">Roman Conquest of Britain</div>
+                <div class="event-description">
+                    Emperor Claudius ordered the invasion of Britain, beginning nearly four centuries of Roman rule.
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-item" data-event="fire">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">64 CE</div>
+                <div class="event-title">Great Fire of Rome</div>
+                <div class="event-description">
+                    A devastating fire destroyed much of Rome under Emperor Nero, leading to the first major Christian persecution.
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-item" data-event="four_emperors">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">69 CE</div>
+                <div class="event-title">Year of the Four Emperors</div>
+                <div class="event-description">
+                    Following Nero's suicide, civil war erupted as four claimants fought for the imperial throne.
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-item" data-event="jerusalem">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">70 CE</div>
+                <div class="event-title">Destruction of Jerusalem</div>
+                <div class="event-description">
+                    Roman forces destroyed Jerusalem and the Second Temple, beginning the Jewish diaspora.
+                </div>
+            </div>
+        </div>
+
+        <div class="timeline-item" data-event="vesuvius">
+            <div class="timeline-dot"></div>
+            <div class="content">
+                <div class="year">79 CE</div>
+                <div class="event-title">Mount Vesuvius Eruption</div>
+                <div class="event-description">
+                    The volcanic eruption destroyed Pompeii and Herculaneum, preserving them for posterity.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="scroll-indicator">↓</div>
+
+    <!-- Modal -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const events = {
+            jesus: {
+                title: "Life and Crucifixion of Jesus Christ",
+                year: "c. 4 BCE - 30/33 CE",
+                content: `
+                    <h3>The Foundation of Christianity</h3>
+                    <p>Jesus of Nazareth was born during the reign of Herod the Great and lived during the height of Roman power in Palestine. His ministry, lasting approximately three years, introduced revolutionary teachings about love, forgiveness, and spiritual salvation.</p>
+                    <p>His crucifixion under Pontius Pilate around 30-33 CE, followed by reports of his resurrection, became the cornerstone of Christian faith. This event would transform world history, eventually leading Christianity to become the dominant religion of the Roman Empire and beyond.</p>
+                    <p><strong>Historical Impact:</strong> The life and teachings of Jesus established the foundation for a religion that would profoundly influence Western civilization, art, literature, law, and moral philosophy for over two millennia.</p>
+                `
+            },
+            augustus: {
+                title: "Establishment of the Roman Empire",
+                year: "27 BCE - 14 CE",
+                content: `
+                    <h3>From Republic to Empire</h3>
+                    <p>Augustus (originally Octavian) became the first Roman emperor in 27 BCE, effectively ending the Roman Republic and establishing the Principate. His reign brought stability after decades of civil war.</p>
+                    <p>The Pax Romana (Roman Peace) that Augustus initiated lasted over 200 years, facilitating trade, cultural exchange, and relative stability across the Mediterranean world. His administrative reforms created the imperial system that would govern the Roman world for centuries.</p>
+                    <p><strong>Key Achievements:</strong> Constitutional settlement, expansion of citizenship, massive building programs, establishment of the Praetorian Guard, and creation of a professional army with fixed terms of service.</p>
+                `
+            },
+            paul: {
+                title: "Ministry of Paul the Apostle",
+                year: "c. 33-67 CE",
+                content: `
+                    <h3>The Great Missionary</h3>
+                    <p>Paul of Tarsus, originally Saul, underwent a dramatic conversion on the road to Damascus and became Christianity's most influential missionary. His three major missionary journeys established churches throughout Asia Minor, Greece, and the eastern Mediterranean.</p>
+                    <p>Paul's letters (epistles) to these churches form a significant portion of the New Testament and provided theological foundations for Christian doctrine. His work transformed Christianity from a Jewish sect into a universal religion open to all peoples.</p>
+                    <p><strong>Legacy:</strong> Paul's theological writings on salvation, grace, and the nature of the church shaped Christian doctrine. His missionary strategy of establishing local churches with indigenous leadership enabled Christianity's rapid spread.</p>
+                `
+            },
+            britain: {
+                title: "Roman Conquest of Britain",
+                year: "43 CE",
+                content: `
+                    <h3>Claudius's Great Achievement</h3>
+                    <p>Emperor Claudius ordered the invasion of Britain in 43 CE, led by Aulus Plautius. The conquest was motivated by economic interests, political prestige, and the need to prevent British support for Gallic resistance.</p>
+                    <p>The Romans gradually conquered most of Britain, establishing cities like Londinium (London) and Camulodunum (Colchester). Roman culture, law, language, and infrastructure transformed British society for nearly four centuries.</p>
+                    <p><strong>Long-term Impact:</strong> Roman rule introduced urban civilization, roads, aqueducts, and Christianity to Britain. The Roman withdrawal in 410 CE left a lasting cultural and linguistic legacy that influenced the development of England.</p>
+                `
+            },
+            fire: {
+                title: "Great Fire of Rome",
+                year: "64 CE",
+                content: `
+                    <h3>Nero's Crisis</h3>
+                    <p>The Great Fire of Rome burned for six days and seven nights, destroying ten of Rome's fourteen districts. The fire began in shops around the Circus Maximus and spread rapidly through the densely packed wooden structures.</p>
+                    <p>Emperor Nero, contrary to legend, was not in Rome when the fire started and organized relief efforts. However, he used the cleared land to build his extravagant Golden House (Domus Aurea), leading to public resentment.</p>
+                    <p><strong>Christian Persecution:</strong> Nero blamed the Christians for the fire, initiating the first major imperial persecution of the new religion. This established a precedent for later persecutions and created the first Christian martyrs in Rome.</p>
+                `
+            },
+            four_emperors: {
+                title: "Year of the Four Emperors",
+                year: "69 CE",
+                content: `
+                    <h3>Civil War and Succession Crisis</h3>
+                    <p>Following Nero's suicide in 68 CE, the Roman Empire faced its first major succession crisis. Four men claimed the imperial throne: Galba, Otho, Vitellius, and Vespasian.</p>
+                    <p>Galba was murdered by Otho's supporters, Otho committed suicide after losing to Vitellius, and Vitellius was killed when Vespasian's forces captured Rome. This year demonstrated the military's decisive role in imperial succession.</p>
+                    <p><strong>Resolution:</strong> Vespasian's victory established the Flavian dynasty and restored stability. His pragmatic rule and reconstruction efforts, including the Colosseum, marked a return to effective governance.</p>
+                `
+            },
+            jerusalem: {
+                title: "Destruction of Jerusalem",
+                year: "70 CE",
+                content: `
+                    <h3>End of the Second Temple Period</h3>
+                    <p>The siege of Jerusalem by Titus ended the First Jewish-Roman War (66-73 CE). After a brutal siege lasting several months, Roman forces breached the city walls and destroyed the Second Temple on the 9th of Av.</p>
+                    <p>According to Josephus, over a million Jews were killed or enslaved. The Temple's destruction ended the Second Temple period and fundamentally changed Judaism, forcing it to evolve from a Temple-based religion to one based on Torah study and rabbinical authority.</p>
+                    <p><strong>Historical Consequences:</strong> This event began the Jewish diaspora, scattered Jewish communities throughout the Roman Empire, and contributed to the separation of Christianity from Judaism as distinct religions.</p>
+                `
+            },
+            vesuvius: {
+                title: "Mount Vesuvius Eruption",
+                year: "79 CE",
+                content: `
+                    <h3>Pompeii and Herculaneum Preserved</h3>
+                    <p>Mount Vesuvius erupted catastrophically, burying the cities of Pompeii and Herculaneum under volcanic ash and pumice. Pliny the Younger provided the only surviving eyewitness account of the disaster.</p>
+                    <p>The eruption killed thousands but inadvertently preserved these cities in remarkable detail. The ash and pumice created anaerobic conditions that preserved organic materials, buildings, and even human forms.</p>
+                    <p><strong>Archaeological Treasure:</strong> The preserved cities provide unparalleled insights into daily Roman life, from street art and household items to the last meals people were eating. This "time capsule" remains one of archaeology's most valuable resources.</p>
+                `
+            }
+        };
+
+        // Intersection Observer for animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            observer.observe(item);
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('eventModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeBtn = document.querySelector('.close');
+
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const eventKey = item.dataset.event;
+                const event = events[eventKey];
+                
+                modalContent.innerHTML = `
+                    <h2>${event.title}</h2>
+                    <h3>${event.year}</h3>
+                    ${event.content}
+                `;
+                
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Hide scroll indicator after scrolling
+        window.addEventListener('scroll', () => {
+            const scrollIndicator = document.querySelector('.scroll-indicator');
+            if (window.scrollY > 100) {
+                scrollIndicator.style.opacity = '0';
+            } else {
+                scrollIndicator.style.opacity = '1';
+            }
+        });
+
+        // Smooth scroll for better experience
+        document.addEventListener('DOMContentLoaded', () => {
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.style.transition = `all 0.6s ease ${index * 0.1}s`;
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>
